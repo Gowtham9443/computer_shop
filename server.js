@@ -1,10 +1,16 @@
 const path = require('path');
 const fs = require('fs');
 
-// Always load .env from the backend folder (next to this file), no matter which
-// folder the server is started from.
+// Load .env from the backend folder (next to this file) when it exists - this is
+// for LOCAL development only. On hosts like Render, Railway, Heroku etc. there is
+// no .env file; environment variables are injected directly by the platform, so
+// we must not fail just because the file is missing.
 const envPath = path.join(__dirname, '.env');
-require('dotenv').config({ path: envPath });
+if (fs.existsSync(envPath)) {
+  require('dotenv').config({ path: envPath });
+} else {
+  console.log('No .env file found (expected on cloud hosts like Render) - using environment variables from the platform instead.');
+}
 
 const express = require('express');
 const cors = require('cors');
@@ -18,15 +24,26 @@ const orderRoutes = require('./routes/orders');
 const dashboardRoutes = require('./routes/dashboard');
 
 // Fail early with a clear message instead of a confusing 500 later on login
-if (!fs.existsSync(envPath)) {
-  console.error(`\n.env file not found. Expected it at:\n  ${envPath}`);
-  console.error('Fix: in the backend folder run  copy .env.example .env  then edit it.');
-  console.error('(If you have a file named "_env" or ".env.txt", rename it to exactly ".env")\n');
+// These checks work the same whether the values came from a local .env file or
+// from environment variables set on a hosting platform (Render, Railway, etc.).
+if (!process.env.MONGODB_URI) {
+  console.error('\nMONGODB_URI is not set.');
+  if (fs.existsSync(envPath)) {
+    console.error(`Add it to ${envPath}`);
+  } else {
+    console.error('Local dev: run  copy .env.example .env  in the backend folder, then edit it.');
+    console.error('On Render/Railway/Heroku etc: add MONGODB_URI in your service\'s Environment Variables settings.');
+  }
   process.exit(1);
 }
 if (!process.env.JWT_SECRET) {
-  console.error(`\nJWT_SECRET is missing in ${envPath}`);
-  console.error('Add a line like:  JWT_SECRET=<a long random string>   (no spaces around "=", no quotes)');
+  console.error('\nJWT_SECRET is not set.');
+  if (fs.existsSync(envPath)) {
+    console.error(`Add it to ${envPath}`);
+  } else {
+    console.error('Local dev: run  copy .env.example .env  in the backend folder, then edit it.');
+    console.error('On Render/Railway/Heroku etc: add JWT_SECRET in your service\'s Environment Variables settings.');
+  }
   console.error('Generate one with:  node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"\n');
   process.exit(1);
 }
