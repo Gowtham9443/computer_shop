@@ -1,5 +1,5 @@
 # Backend - Sen Kumaran Info Tech API
-# Frontend Project Link: 
+# Frontend Project Link:  https://gowthamsenkumaran.netlify.app/
 Node.js / Express / MongoDB REST API. No longer serves any HTML — it's a pure API
 that the `../frontend` project (or anything else) calls over HTTP. CORS is enabled
 so a frontend on a different origin/port can reach it.
